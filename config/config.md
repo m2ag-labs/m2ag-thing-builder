@@ -1,0 +1,1 @@
+This directory will contain config files copied by the installer.
