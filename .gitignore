@@ -3,6 +3,7 @@ config/component_map.json
 config/server.json
 config/available
 device/hardware/components
+static
 venv/
 .DS_Store
 .idea
@@ -272,4 +273,5 @@ dmypy.json
 /config/id_rsa.pub
 /config/config_raspib.json
 /config/.certs/
+/static/
 /static/

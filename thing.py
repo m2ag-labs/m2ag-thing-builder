@@ -6,7 +6,6 @@ import os.path
 from pathlib import Path
 
 from webthing import (MultipleThings, WebThingServer)
-# TODO: check os here -- are we on mac?
 from device.hardware.hardware import Hardware
 from device.things.things import Things
 from config.helpers.confighelper import ConfigHelper
@@ -50,7 +49,7 @@ def run_server():
 
 if __name__ == '__main__':
     logging.basicConfig(
-        level=10,
+        level=config['log_level'],
         format="%(asctime)s %(filename)s:%(lineno)s %(levelname)s %(message)s"
     )
     run_server()
