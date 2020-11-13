@@ -158,5 +158,5 @@ def format_return(data):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port='5000', ssl_context=(
-        f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key'))
+        f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key'), debug=False)
     # app.run(host='0.0.0.0', port='5010')
