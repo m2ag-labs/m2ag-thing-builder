@@ -9,7 +9,7 @@ from config.helpers.confighelper import ConfigHelper
 from pathlib import Path
 
 # app = Flask(__name__)
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'
 app.config['FLASK_SECRET'] = '8675309'
 
@@ -159,4 +159,3 @@ def format_return(data):
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port='5000', ssl_context=(
         f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key'), debug=False)
-    # app.run(host='0.0.0.0', port='5010')
