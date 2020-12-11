@@ -10,7 +10,6 @@ from device.hardware.hardware import Hardware
 from device.things.things import Things
 from config.helpers.confighelper import ConfigHelper
 
-
 config = ConfigHelper.get_config()
 
 
