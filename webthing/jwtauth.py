@@ -11,14 +11,27 @@ import json
 import socket
 from pathlib import Path
 
-
 AUTHORIZATION_HEADER = 'Authorization'
 AUTHORIZATION_PARAM = 'jwt'  # for web socket
-AUTHORIZATION_ERROR_MESSAGE = {"error": "invalid or missing authorization"}
+AUTHORIZATION_ERROR_MESSAGE = {
+        'id': "urn:dev:ops:m2ag-security-required",
+        "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local/auth",
+        "@context": "https://iot.mozilla.org/schemas",
+        "description": "Bearer tokens are required for this device",
+        "securityDefinitions": {
+            "nosec_sc": {
+                "scheme": "nosec"
+            },
+            "bearer_sc": {
+                "scheme": "bearer",
+                "description": "Security is required for this thing.",
+                "authorization": f"https://{socket.gethostname()}.local"
+            }
+        }
+    }
 AUTHORIZATION_ERROR_CODE = 401
 ENABLE = False
 SECRET_KEY = ''
-
 CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json'
 # secret can be any string
 # enable false will signal the thing to bypass auth checks
@@ -93,6 +106,7 @@ def jwtauth(handler_class):
     """
         Tornado JWT Auth Decorator
     """
+
     def wrap_execute(handler_execute):
         def require_auth(handler):
             # configure the jwt with a config file
