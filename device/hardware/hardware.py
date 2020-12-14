@@ -31,8 +31,8 @@ class Hardware:
             module = importlib.import_module('device.hardware.components.' + k)
             class_ = getattr(module, k.capitalize())
             # TODO: what about buttons and stuff?
-            if self.i2c is not None and 'address' in conf[k]['init']:
-                cl = class_(self.i2c, int(conf[k]['init']['address'], 16), logging)
+            if self.i2c is not None and 'svc' in conf[k]['init']:
+                cl = class_(self.i2c, conf[k]['init']['config'], logging)
             elif 'config' in conf[k]['init']:
                 cl = class_(conf[k]['init']['config'], logging)
             else:
