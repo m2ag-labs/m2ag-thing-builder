@@ -1,13 +1,12 @@
 import json
 
-from flask import Flask, request, Response, send_from_directory
+from flask import Flask, request, Response
 from api.helpers.utils import Utils
 from api.helpers.password import Password
 from api.helpers.auth import Auth
 from config.helpers.confighelper import ConfigHelper
-from pathlib import Path
 
-# app = Flask(__name__)
+
 app = Flask(__name__)
 
 
@@ -24,6 +23,12 @@ def get_token():
 def get_config():
     if request.method == 'GET':
         return format_return(ConfigHelper.get_config())
+
+
+@app.route('/config/features', methods=['GET'])
+def get_config_features():
+    if request.method == 'GET':
+        return format_return(ConfigHelper.get_features())
 
 
 @app.route('/config/server', methods=['GET', 'PUT'])
@@ -103,7 +108,7 @@ def get_put_pip(package):
 
 @app.route('/<service>/<action>', methods=['GET'])
 def service_action(service, action):
-    if service in ['m2ag-thing', 'm2ag-motion', 'mozilla-gateway', 'm2ag-gateway']:
+    if service in ['m2ag-thing', 'm2ag-motion', 'm2ag-gateway']:
         # the service webcomponent prefixes everything with m2ag-
         if service == 'm2ag-motion':
             return format_return(Utils.service_action('motion', action))

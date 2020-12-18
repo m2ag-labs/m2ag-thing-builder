@@ -7,10 +7,13 @@ class ConfigHelper:
     @staticmethod
     def get_features():
         features = []
-        if os.path.isdir(os.getenv('HOME') + "/mozilla-iot/gateway"):
-            features.append('mozilla-gateway')
+        if os.path.isfile("/etc/systemd/system/m2ag-thing.service"):
+            features.append('m2ag-thing')
+        if os.path.isfile("/etc/systemd/system/m2ag-gateway.service"):
+            features.append('m2ag-gateway')
+        if os.path.isfile("/etc/systemd/system/motion.service"):
+            features.append('m2ag-motion')
         # TODO: look from motion in the install path
-
         return features
 
     @staticmethod
@@ -29,8 +32,8 @@ class ConfigHelper:
             except UnicodeDecodeError:
                 config['component_map'] = {}
 
-        # add features.
-        config['features'] = ConfigHelper.get_features()
+        # add features covered in separate call.
+        # config['features'] = ConfigHelper.get_features()
         return config
 
     @staticmethod

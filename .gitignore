@@ -3,6 +3,7 @@ config/component_map.json
 config/server.json
 config/available
 device/hardware/components
+device/things/components
 static
 venv/
 .DS_Store
