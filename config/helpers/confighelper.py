@@ -13,16 +13,15 @@ class ConfigHelper:
             features.append('m2ag-gateway')
         if os.path.isfile("/etc/systemd/system/motion.service"):
             features.append('m2ag-motion')
-        # TODO: look from motion in the install path
         return features
 
     @staticmethod
-    def get_config():
+    def get_server_config():
         # TODO: add error check here
         # get server record -
         # do feature detection. Is motion/mozilla gateway etc installed?
         config = ConfigHelper.get_server()
-        config['hardware'] = ConfigHelper.get_modules('components')
+        config['components'] = ConfigHelper.get_modules('components')
         config['things'] = ConfigHelper.get_modules('things')
         with open('./config/component_map.json', 'r') as file:
             try:
@@ -37,6 +36,13 @@ class ConfigHelper:
         return config
 
     @staticmethod
+    def get_config():
+        # get_component_map returns components and things
+        config = ConfigHelper.get_component_map()
+        config['server'] = ConfigHelper.get_server()
+        return config
+
+    @staticmethod
     def get_modules(t_dir):
         modules = {}
         entries = os.scandir('./config/available/' + t_dir + '/')
@@ -46,7 +52,7 @@ class ConfigHelper:
                     config = file.read().replace('\n', "")
                     if config != '':
                         modules[entry.name[:entry.name.find('.json')]] = json.loads(config)
-                except UnicodeDecodeError: # .DStore on mac make this choke otherwise
+                except UnicodeDecodeError:  # .DStore on mac make this choke otherwise
                     pass
         return modules
 
@@ -60,7 +66,6 @@ class ConfigHelper:
     def delete_module(section, component):
         os.remove('./config/available/' + section + '/' + component + '.json')
         return os.path.exists('./config/available/' + section + '/' + component + '.json')
-
 
     @staticmethod
     def put_module(section, component, data):
@@ -115,9 +120,12 @@ class ConfigHelper:
     @staticmethod
     def get_component_map():
         # get the current map from config.json
-        with open('./config/component_map.json', 'r') as file:
-            conf = file.read().replace('\n', "")
-        config = json.loads(conf)
+        try:
+            with open('./config/component_map.json', 'r') as file:
+                conf = file.read().replace('\n', "")
+            config = json.loads(conf)
+        except UnicodeDecodeError:
+            config = {'component_map': {}}
         # get lists of available components and things
         config['components'] = [x.split('.')[0] for x in os.listdir('./config/available/components/')]
         config['things'] = [x.split('.')[0] for x in os.listdir('./config/available/things/')]

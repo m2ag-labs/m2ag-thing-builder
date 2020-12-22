@@ -23,7 +23,7 @@ class Hardware:
         # Create a dict with desired modules in it
         # Check component map and create a list of devices to create
         build = list(config['component_map'].values())
-        conf = config['hardware']
+        conf = config['components']
         for k in build:
             # generate a class -- multiple things to one service class.
             if k in self.components:
