@@ -153,6 +153,6 @@ class ConfigHelper:
         # TODO: check for valid server file?
         if server is not None:
             with open('./config/server.json', 'w') as file:
-                file.write(server)
+                file.write(json.dumps(server))
             file.close()
         return ConfigHelper.get_server()
