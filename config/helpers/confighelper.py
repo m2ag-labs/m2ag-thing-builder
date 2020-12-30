@@ -11,7 +11,7 @@ class ConfigHelper:
             features.append('m2ag-thing')
         if os.path.isfile("/etc/systemd/system/m2ag-gateway.service"):
             features.append('m2ag-gateway')
-        if os.path.isfile("/etc/systemd/system/motion.service"):
+        if os.path.isfile("/etc/init.d/motion"):
             features.append('m2ag-motion')
         return features
 
@@ -37,7 +37,7 @@ class ConfigHelper:
 
     @staticmethod
     def get_config():
-        # get_component_map returns components and things
+        # get_component_map returns components and things lists
         config = ConfigHelper.get_component_map()
         config['server'] = ConfigHelper.get_server()
         return config
