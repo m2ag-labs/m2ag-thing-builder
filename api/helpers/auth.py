@@ -17,7 +17,8 @@ try:
 except FileNotFoundError:
     import string
     import random
-    rando = string.ascii_lowercase + string.punctuation + string.digits
+
+    rando = string.ascii_lowercase + string.digits
     SECRET = ''.join(random.choice(rando) for i in range(100))
     default = {
         "secret": SECRET,
@@ -25,7 +26,6 @@ except FileNotFoundError:
     }
     with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json', 'w') as file:
         file.write(json.dumps(default))
-
 
 AUTH_TTL = 31104000  # this is super long for development
 
@@ -48,5 +48,9 @@ class Auth:
             SECRET,
             algorithm='HS256'
         )
-
-        return {'token': encoded.decode('ascii')}
+        # raspian desktop full -- this returns a buffer and needs to be decoded - currently pyjwt 1.7.0
+        # raspian lite -- returns a string -- version pyjwt 2.0.0
+        if isinstance(encoded, str):
+            return {'token': encoded}
+        else:
+            return {'token': encoded.decode('ascii')}
