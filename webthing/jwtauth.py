@@ -139,6 +139,7 @@ def jwtauth(handler_class):
                             jwt.decode(
                                 auth[0].decode('UTF-8'),
                                 SECRET_KEY,
+                                algorithms=["HS256"],
                                 options=jwt_options
                             )
                         except Exception as err:
