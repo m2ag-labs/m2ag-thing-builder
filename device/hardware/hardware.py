@@ -32,25 +32,8 @@ class Hardware:
             class_ = getattr(module, k.capitalize())
             # TODO: what about buttons and stuff?
             if self.i2c is not None and 'svc' in conf[k]['init']:
-                cl = class_(self.i2c, conf[k]['init']['config'], logging)
-            elif 'config' in conf[k]['init']:
-                cl = class_(conf[k]['init']['config'], logging)
+                cl = class_(self.i2c, conf[k], logging)
             else:
-                cl = class_(logging)
-            # set any attributes for startup
-            if len(conf[k]['attr']) > 0:
-                for a in conf[k]['attr']:
-                    # if this config setting is a dict -- the attribute value is an enum in module
-                    if isinstance(conf[k]['attr'][a], dict):
-                        t = conf[k]['attr'][a]
-                        for s in t:
-                            # this next line is crazy
-                            setattr(getattr(cl, k), a, getattr(getattr(module, s), t[s]))
-                            # we are getting the value of the enum from our module
-                    else:
-                        # target object, target attribute, value to set
-                        # this is kind of like init -- set values at start
-                        setattr(cl, a, conf[k]['attr'][a])
+                cl = class_(conf[k], logging)
 
             self.components[k] = cl
-
