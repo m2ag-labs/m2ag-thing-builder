@@ -28,11 +28,16 @@ class Hardware:
             # generate a class -- multiple things to one service class.
             if k in self.components:
                 continue
-            module = importlib.import_module('device.hardware.components.' + k)
-            class_ = getattr(module, k.capitalize())
+            try:
+                module = importlib.import_module('device.hardware.components.' + k)
+                class_ = getattr(module, k.capitalize())
+            except ModuleNotFoundError:
+                # TODO: add other hardware -- spi, etc
+                module = importlib.import_module('device.hardware.i2cwrapper')
+                class_ = getattr(module, 'I2cWrapper')
             # TODO: what about buttons and stuff?
             if self.i2c is not None and 'svc' in conf[k]['init']:
-                cl = class_(self.i2c, conf[k], logging)
+                cl = class_(conf[k], logging, self.i2c)
             else:
                 cl = class_(conf[k], logging)
 
