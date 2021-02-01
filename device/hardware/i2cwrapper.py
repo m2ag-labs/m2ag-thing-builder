@@ -6,6 +6,9 @@ class I2cWrapper:
     def __init__(self, config, logging, i2c):
         self.logging = logging
         self.wrapped = config['init']['driver']
+        self.offsets = None
+        if 'offsets' in config:
+            self.offsets = config['offsets']
         lib = {}
         try:
             # to do -- what to do about multiple modules --
@@ -37,7 +40,10 @@ class I2cWrapper:
 
     def get(self, val):
         try:
-            return getattr(self.device, val)
+            if self.offsets is not None and val in self.offsets:
+                return getattr(self.device, val) + self.offsets[val]
+            else:
+                return getattr(self.device, val)
         except AttributeError:
             self.logging.error(f'{self.wrapped} {val} was not found')
             return -1

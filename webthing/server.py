@@ -101,7 +101,7 @@ class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
         """Validate Host header."""
         host = self.request.headers.get('Host', None)
-        if host is not None and host.lower() in self.hosts:
+        if host is not None and host in self.hosts:
             return
 
         raise tornado.web.HTTPError(403)
@@ -120,8 +120,7 @@ class BaseHandler(tornado.web.RequestHandler):
         """Set the default headers for all requests."""
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers',
-                        'Origin, X-Requested-With, Content-Type, Accept, '
-                        'Authorization')
+                        'Origin, X-Requested-With, Content-Type, Accept, Authorization')
         self.set_header('Access-Control-Allow-Methods',
                         'GET, HEAD, PUT, POST, DELETE')
 
@@ -196,8 +195,7 @@ class ThingHandler(tornado.websocket.WebSocketHandler, Subscriber):
         """Set the default headers for all requests."""
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header('Access-Control-Allow-Headers',
-                        'Origin, X-Requested-With, Content-Type, Accept,'
-                        ' Authorization')
+                        'Origin, X-Requested-With, Content-Type, Accept, Authorization')
         self.set_header('Access-Control-Allow-Methods',
                         'GET, HEAD, PUT, POST, DELETE')
 
