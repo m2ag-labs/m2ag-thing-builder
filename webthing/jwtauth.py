@@ -15,7 +15,7 @@ AUTHORIZATION_HEADER = 'Authorization'
 AUTHORIZATION_PARAM = 'jwt'  # for web socket
 AUTHORIZATION_ERROR_MESSAGE = {
         'id': "urn:dev:ops:m2ag-security-required",
-        "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local/auth",
+        "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local/auth.html",
         "@context": "https://iot.mozilla.org/schemas",
         "description": "Bearer tokens are required for this device",
         "securityDefinitions": {
