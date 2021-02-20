@@ -5,6 +5,8 @@ from api.helpers.utils import Utils
 from api.helpers.password import Password
 from api.helpers.auth import Auth
 from config.helpers.confighelper import ConfigHelper
+import os.path
+from pathlib import Path
 
 
 app = Flask(__name__)
@@ -135,4 +137,8 @@ def format_return(data):
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port='5010')
+    if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') \
+            and os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt'):
+        app.run(host='127.0.0.1', port='5010')
+    else:
+        app.run(host='0.0.0.0', port='5000')

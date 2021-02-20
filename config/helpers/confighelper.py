@@ -11,6 +11,8 @@ class ConfigHelper:
             features.append('m2ag-thing')
         if os.path.isfile("/etc/systemd/system/m2ag-gateway.service"):
             features.append('m2ag-gateway')
+        if os.path.isfile("/etc/systemd/system/m2ag-homeassistant.service"):
+            features.append('m2ag-homeassistant')
         if os.path.isfile("/etc/init.d/motion"):
             features.append('m2ag-motion')
         return features
