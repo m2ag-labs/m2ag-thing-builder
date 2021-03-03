@@ -1,15 +1,19 @@
 import json
 
 from flask import Flask, request, Response
+from flask_cors import CORS
 from api.helpers.utils import Utils
 from api.helpers.password import Password
 from api.helpers.auth import Auth
 from config.helpers.confighelper import ConfigHelper
 import os.path
+import socket
 from pathlib import Path
 
-
 app = Flask(__name__)
+# TODO: remove when gone to tornado
+if not os.path.isfile('/etc/nginx/sites-enabled/m2ag-api-proxy'):
+    CORS(app)
 
 
 # jwt to access this thing with
@@ -136,9 +140,15 @@ def format_return(data):
     return Response(json.dumps({'data': data}), mimetype='application/json')
 
 
+# TODO: do we need to override host name ? Should match certificate
 if __name__ == '__main__':
-    if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') \
-            and os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt'):
+    # TODO: remove when gone to tornado
+    if os.path.isfile('/etc/nginx/sites-enabled/m2ag-api-proxy'):
         app.run(host='127.0.0.1', port='5010')
     else:
-        app.run(host='0.0.0.0', port='5000')
+        if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') \
+                and os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.key'):
+            context = (f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key')
+            app.run(host=f'{socket.gethostname()}.local', port='5000', ssl_context=context)
+        else:
+            app.run(host=f'{socket.gethostname()}.local', port='5000')
