@@ -15,19 +15,17 @@ AUTHORIZATION_HEADER = 'Authorization'
 AUTHORIZATION_PARAM = 'jwt'  # for web socket
 AUTHORIZATION_ERROR_MESSAGE = {
         'id': "urn:dev:ops:m2ag-security-required",
-        "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local/auth.html",
-        "@context": "https://iot.mozilla.org/schemas",
+        "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local:8443/auth.html",
+        "@context": "https://www.w3.org/2019/wot/td/v1",
         "description": "Bearer tokens are required for this device",
         "securityDefinitions": {
-            "nosec_sc": {
-                "scheme": "nosec"
-            },
-            "bearer_sc": {
+           "bearer_sc": {
                 "scheme": "bearer",
                 "description": "Security is required for this thing.",
-                "authorization": f"https://{socket.gethostname()}.local"
+                "authorization": f"https://{socket.gethostname()}.local:8443/auth.html"
             }
-        }
+        },
+        "security": ["bearer_sc"]
     }
 AUTHORIZATION_ERROR_CODE = 401
 ENABLE = False
@@ -38,23 +36,7 @@ CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json'
 # example jwt_secret.json:
 '''{"secret": "57%17p}\"7n0<x4d?qn<9ech<qkp*i.hb]>45s3ux=qilds?e2p$fcax\"}<p-0y!4#)osj;v2xr(|ul'2/)<o+65}|h$+!z&a;2^+", 
  "enable": true,
- "auth_thing":{
-        "id": "urn:dev:ops:m2ag-security-required",
-        "title": "raspib is a secure thing. See https://raspib.local/auth",
-        "@context": "https://iot.mozilla.org/schemas",
-        "description": "Bearer tokens are required for this device",
-        "securityDefinitions": {
-            "nosec_sc": {
-                "scheme": "nosec"
-            },
-            "bearer_sc": {
-                "scheme": "bearer",
-                "description": "Security is required for this thing.",
-                "authorization":"https://raspib.local"
-            }
-        },
-        "security": "bearer_sc"
-    }
+ "auth_thing":{    }
 }
  '''
 try:

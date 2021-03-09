@@ -1,20 +1,21 @@
 """Python Web Thing server implementation."""
 
-from zeroconf import ServiceInfo, Zeroconf
 import json
 import socket
 import sys
+
 import tornado.concurrent
 import tornado.gen
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+from zeroconf import ServiceInfo, Zeroconf
 
 from .errors import PropertyError
+from .jwtauth import jwtauth
 from .subscriber import Subscriber
 from .utils import get_addresses, get_ip
-from .jwtauth import jwtauth
 
 
 @tornado.gen.coroutine
@@ -153,17 +154,21 @@ class ThingsHandler(BaseHandler):
                 'rel': 'alternate',
                 'href': '{}{}'.format(ws_href, thing.get_href()),
             })
-            description['base'] = '{}://{}{}'.format(
+            description['base'] = '{}://{}'.format(
                 self.request.protocol,
-                self.request.headers.get('Host', ''),
-                thing.get_href()
+                self.request.headers.get('Host', '')
             )
+            # TODO: add config option for this.
             description['securityDefinitions'] = {
-                'nosec_sc': {
-                    'scheme': 'nosec',
+                "bearer_sc": {
+                    "scheme": "bearer",
+                    "in": "header",
+                    "format": "jwt",
+                    "alg": "HS256",
+                    "authorization": f'https://{socket.gethostname()}.local:8443/auth.html'
                 },
             }
-            description['security'] = 'nosec_sc'
+            description['security'] = ['bearer_sc']
             descriptions.append(description)
 
         self.write(json.dumps(descriptions))
@@ -241,17 +246,21 @@ class ThingHandler(tornado.websocket.WebSocketHandler, Subscriber):
             'rel': 'alternate',
             'href': '{}{}'.format(ws_href, self.thing.get_href()),
         })
-        description['base'] = '{}://{}{}'.format(
+        description['base'] = '{}://{}'.format(
             self.request.protocol,
-            self.request.headers.get('Host', ''),
-            self.thing.get_href()
+            self.request.headers.get('Host', '')
         )
+        # TODO: add config option for this.
         description['securityDefinitions'] = {
-            'nosec_sc': {
-                'scheme': 'nosec',
+            "bearer_sc": {
+                "scheme": "bearer",
+                "in": "header",
+                "format": "jwt",
+                "alg": "HS256",
+                "authorization": f'https://{socket.gethostname()}.local:8443/auth.html'
             },
         }
-        description['security'] = 'nosec_sc'
+        description['security'] = ['bearer_sc']
 
         self.write(json.dumps(description))
         self.finish()

@@ -1,6 +1,7 @@
 """High-level Property base class implementation."""
 
 from copy import deepcopy
+
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
@@ -52,6 +53,23 @@ class Property:
         Returns a dictionary describing the property.
         """
         description = deepcopy(self.metadata)
+
+        if 'forms' not in description:
+            description['forms'] = []
+
+        _op = []
+
+        if 'readOnly' not in self.metadata or not self.metadata['readOnly']:
+            _op.append('writeproperty')
+        if 'writeOnly' not in self.metadata or not self.metadata['writeOnly']:
+            _op.append('readproperty')
+
+        description['forms'].append(
+            {
+                "href": self.href_prefix + self.href,
+                "op": _op,
+                "contentType": "application/json"
+            })
 
         if 'links' not in description:
             description['links'] = []
