@@ -1,7 +1,6 @@
 """High-level Property base class implementation."""
 
 from copy import deepcopy
-
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 

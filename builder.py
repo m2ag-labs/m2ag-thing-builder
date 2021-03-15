@@ -128,8 +128,8 @@ def get_put_pip(user, package):
 @app.route('/<service>/<action>', methods=['GET'])
 @htpasswd.required
 def service_action(user, service, action):
-    if service in ['m2ag-thing', 'm2ag-motion', 'm2ag-homeassistant', 'm2ag-indicator']:
-        # the service webcomponent prefixes everything with m2ag-
+    if service in ['m2ag-thing', 'm2ag-motion', 'm2ag-homeassistant', 'm2ag-indicator', 'm2ag-gateway']:
+        # the service web component prefixes everything with m2ag-
         if service == 'm2ag-motion':
             return format_return(Utils.service_action('motion', action))
         else:
