@@ -19,6 +19,7 @@ class Things:
         # TODO: Add checking for component_map and things -- graceful fail
         for k in c_map:
             # generate a class
+            # TODO: make this all generic
             try:
                 module = importlib.import_module('device.things.components.' + k)
                 class_ = getattr(module, k.title())
@@ -28,7 +29,10 @@ class Things:
                 class_ = getattr(module, 'Generic')
 
             # add the required device to the thing
-            cl_ = class_(th[k], logging, device[c_map[k]])
-            ThingBuilder.add_props(th[k], cl_)
-            # Add properties
-            self.things.append(cl_)
+            if c_map[k] in device:
+                cl_ = class_(th[k], logging, device[c_map[k]])
+                ThingBuilder.add_props(th[k], cl_)
+                # Add properties
+                self.things.append(cl_)
+            else:
+                logging.error(f'Thing build error: {c_map[k]} was not found in devices.')

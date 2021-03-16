@@ -1,70 +1,76 @@
 """
     JSON Web Token auth for Tornado
-    Modified by marc at m2ag-labs (marc@m2ag.net) from files found here:
+    Modified by marc at m2ag.labs (marc@m2ag.net) from files found here:
     https://github.com/paulorodriguesxv/tornado-json-web-token-jwt
     Added configuration from file, errors as dict, added a check for
     websocket upgrade (wss add auth parameter to connect string --
-    ?Authorization=Bearer <token>)
+    ?jwt=<token>)
 """
 import jwt
 import json
 import socket
 from pathlib import Path
 
-AUTHORIZATION_HEADER = 'Authorization'
-AUTHORIZATION_PARAM = 'jwt'  # for web socket
-AUTHORIZATION_ERROR_MESSAGE = {
-        'id': "urn:dev:ops:m2ag-security-required",
+"""
+    Secret can be any string -- will be auto generated if jwt_secrets file does not exist
+    Use the secret to generate the JWT.
+    If it does not exist .m2ag-labs/secrets/jwt_config.json will be created.
+    Setting enable false will signal the thing to bypass auth checks.
+"""
+CONFIG_FILE = 'jwt_config.json'
+CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets'
+OPTIONS = {
+    'enable': True,
+    'secret_key': '',
+    'auth_header': 'Authorization',
+    'auth_param': 'jwt',
+    'auth_error_code': 401,
+    'auth_error_thing': {  # this needs to be json
+        "id": "urn:m2ag:security:authorization-required",
         "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local:8443/auth.html",
-        "@context": "https://www.w3.org/2019/wot/td/v1",
+        "@context": "https://webthings.io/schemas",
         "description": "Bearer tokens are required for this device",
         "securityDefinitions": {
-           "bearer_sc": {
+            "bearer_sc": {
                 "scheme": "bearer",
+                "alg": "HS256",
                 "description": "Security is required for this thing.",
                 "authorization": f"https://{socket.gethostname()}.local:8443/auth.html"
             }
         },
         "security": ["bearer_sc"]
+    },
+    'jwt_options': {
+        'verify_signature': True,
+        'verify_exp': False,  # JWTs will never expire for this device if False
+        'verify_nbf': False,
+        'verify_iat': True,
+        'verify_aud': False
     }
-AUTHORIZATION_ERROR_CODE = 401
-ENABLE = False
-SECRET_KEY = ''
-CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json'
-# secret can be any string
-# enable false will signal the thing to bypass auth checks
-# example jwt_secret.json:
-'''{"secret": "57%17p}\"7n0<x4d?qn<9ech<qkp*i.hb]>45s3ux=qilds?e2p$fcax\"}<p-0y!4#)osj;v2xr(|ul'2/)<o+65}|h$+!z&a;2^+", 
- "enable": true,
- "auth_thing":{    }
 }
- '''
-try:
-    with open(CONFIG_PATH, 'r') as file:
-        opts = json.loads(file.read().replace('\n', ''))
-        for i in opts:
-            if i == 'secret':
-                SECRET_KEY = opts[i]
-                continue
-            if i == 'enable':
-                ENABLE = opts[i]
-                continue
-            if i == 'auth_thing':
-                AUTHORIZATION_ERROR_MESSAGE = opts[i]
-                continue
-        del opts  # clean up
 
-except FileNotFoundError:
-    pass  # go with defaults if no file found -- disable checking.
 
-# TODO: add these to the config file
-jwt_options = {
-    'verify_signature': True,
-    'verify_exp': True,
-    'verify_nbf': False,
-    'verify_iat': True,
-    'verify_aud': False
-}
+def get_options():
+    try:
+        with open(f'{CONFIG_PATH}/{CONFIG_FILE}', 'r') as file:
+            opts = json.loads(file.read().replace('\n', ''))
+            for i in opts:
+                OPTIONS[i] = opts[i]
+            del opts  # clean up
+
+    except FileNotFoundError:
+        import string
+        import random
+
+        rando = string.ascii_lowercase + string.digits
+        OPTIONS['secret_key'] = ''.join(random.choice(rando) for i in range(100))
+
+        Path(CONFIG_PATH).mkdir(parents=True, exist_ok=True)
+        with open(f'{CONFIG_PATH}/{CONFIG_FILE}', 'w') as file:
+            file.write(json.dumps(OPTIONS))
+
+
+get_options()
 
 
 def return_auth_error(handler, message):
@@ -72,41 +78,36 @@ def return_auth_error(handler, message):
         Return authorization error
     """
     handler._transforms = []
-    handler.set_status(AUTHORIZATION_ERROR_CODE)
-    handler.write(AUTHORIZATION_ERROR_MESSAGE)
+    handler.set_status(OPTIONS['auth_error_code'])
+    handler.write(OPTIONS['auth_error_thing'])
     handler.finish()
 
 
 def return_header_error(handler):
-    """
-        Returh authorization header error
-    """
-    return_auth_error(handler, AUTHORIZATION_ERROR_MESSAGE)
+    return_auth_error(handler, OPTIONS['auth_error_thing'])
 
 
 def jwtauth(handler_class):
-    """
-        Tornado JWT Auth Decorator
-    """
+    # Tornado JWT Auth Decorator
 
     def wrap_execute(handler_execute):
         def require_auth(handler):
             # configure the jwt with a config file
-            if not ENABLE:
+            if not OPTIONS['enable']:
                 return True
-            auth = handler.request.headers.get(AUTHORIZATION_HEADER)
+            auth = handler.request.headers.get(OPTIONS['auth_header'])
             if auth:
                 parts = auth.split()
                 try:
                     jwt.decode(
                         parts[1],
-                        SECRET_KEY,
+                        OPTIONS['secret_key'],
                         algorithms=["HS256"],
-                        options=jwt_options
+                        options=OPTIONS['jwt_options']
                     )
                 except Exception as err:
                     print(str(err))
-                    return_auth_error(handler, AUTHORIZATION_ERROR_MESSAGE)
+                    return_auth_error(handler, OPTIONS['auth_error_thing'])
 
             else:
                 # is this websocket upgrade? if so look for auth header in
@@ -115,23 +116,22 @@ def jwtauth(handler_class):
                 if upgrade == 'websocket':
                     # broken up for length issue (flake8)
                     handle = handler.request.query_arguments
-                    auth = handle.get(AUTHORIZATION_PARAM)
+                    auth = handle.get(OPTIONS['auth_param'])
                     if auth:
                         try:
                             jwt.decode(
                                 auth[0].decode('UTF-8'),
-                                SECRET_KEY,
+                                OPTIONS['secret_key'],
                                 algorithms=["HS256"],
-                                options=jwt_options
+                                options=OPTIONS['jwt_options']
                             )
                         except Exception as err:
                             print(str(err))
-                            return_auth_error(handler, AUTHORIZATION_ERROR_MESSAGE)
-                            # return_auth_error(handler, str(err))
+                            return_auth_error(handler, OPTIONS['auth_error_thing'])
                         return True
 
                 handler._transforms = []
-                handler.write(AUTHORIZATION_ERROR_MESSAGE)
+                handler.write(OPTIONS['auth_error_thing'])
                 handler.finish()
 
             return True

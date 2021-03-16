@@ -6,7 +6,7 @@ import os.path
 from pathlib import Path
 
 from webthing import (MultipleThings, WebThingServer)
-from device.hardware.hardware import Hardware
+from device.services.services import Services
 from device.things.things import Things
 from config.helpers.confighelper import ConfigHelper
 
@@ -24,7 +24,7 @@ def run_server():
     else:
         ssl_options = None
 
-    device = Hardware(config, logging)
+    device = Services(config, logging)
     things = Things(config, logging, device.components)
     server = WebThingServer(MultipleThings(things.things, config['thing_server']),
                             port=8888, ssl_options=ssl_options)

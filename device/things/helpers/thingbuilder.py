@@ -12,15 +12,17 @@ class ThingBuilder:
         """
 
         for p in config['props']:
+            _set = 'None'
             pr = config['props'][p]
 
-            _set = pr['value'][1]
             _get = pr['value'][0]
-            # TODO: do I need to look for numbers and ints too?
-            if not isinstance(_get, bool):
+            _set = pr['value'][1]
+
+            if isinstance(_get, str):
                 _get = thing.component.get(_get)
 
-            if _set != 'None':
+            # TODO: add index back to this
+            if _set != 'None':   # This is comparing a string
                 vl = Value(_get, lambda v: thing.component.set(v), _set)
             else:
                 vl = Value(_get)

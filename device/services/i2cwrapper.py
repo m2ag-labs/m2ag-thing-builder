@@ -51,6 +51,6 @@ class I2cWrapper:
     def set(self, val):
         try:
             setattr(self.device, getattr(self.device, val[0]), val[1])
-        except:
+        except AttributeError:
             self.logging.error(f'{self.wrapped} could not set {val[0]} to {val[1]}')
             return -1

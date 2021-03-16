@@ -15,7 +15,7 @@ class ValueHelper(Value):
     reports a new value.
     """
 
-    def __init__(self, initial_value, value_forwarder=None, index=None):
+    def __init__(self, initial_value, value_forwarder=None, options=None):
         """
         Initialize the object.
 
@@ -24,9 +24,17 @@ class ValueHelper(Value):
                            thing
         index -- to allow selection of a specific channel of a multichannel
                  device
+        threshold -- used to determine if a change in value was large enough to
+                 warrant an update of the property value.
         """
+        self.index = None
+        self.threshold = None
+        if options is not None and 'index' in options:
+            self.index = options['index']
+        if options is not None and 'threshold' in options:
+            self.threshold = options['threshold']
+
         Value.__init__(self, initial_value, value_forwarder)
-        self.index = index
 
     def set(self, value):
         """
@@ -39,5 +47,24 @@ class ValueHelper(Value):
                 self.value_forwarder([self.index, value])
             else:
                 self.value_forwarder(value)
-
+        # TODO: make this a read back of the set value from component
         self.notify_of_external_update(value)
+
+    def notify_of_external_update(self, value):
+        """
+        Notify observers of a new value.
+
+        Check to see if the value change is greater than or equal the one specified
+        by the options['threshold'] settings
+
+        value -- new value
+
+        """
+        if value is not None and value != self.last_value:
+            if self.threshold is not None:
+                if abs(value - self.last_value >= self.threshold):
+                    self.last_value = value
+                    self.emit('update', value)
+            else:
+                self.last_value = value
+                self.emit('update', value)

@@ -3,7 +3,7 @@ from webthing import Thing
 
 
 class Generic(Thing):
-    """A generic class for hardware access"""
+    """A generic class polled service access"""
 
     def __init__(self, conf, logging, component):
         Thing.__init__(
@@ -25,41 +25,19 @@ class Generic(Thing):
             self.timer.start()
 
     def poll_component(self):
-        for i in self.poll['members']:
-            key = list(i)[0]
-            if isinstance(i[key], dict):  # allows multiple things to one component - nest
-                c = list(i[key].keys())[0]
+        if hasattr(self.component, 'update'):
+            self.component.update()
+        #  TODO: test with servo controller
+        for key in self.poll['members']:
+            if isinstance(key, dict):  # allows multiple things to one component - i.e. nest
+                c = list(key.keys())[0]
                 t = self.component.get({c: key})
-                compare = i[key][c]
             else:  # one thing,
                 t = self.component.get(key)
-                compare = i[key]
 
-            self.check_update(t, key, compare)
+            o = getattr(self, key)
+            o.notify_of_external_update(t)
 
     def cancel_update_level_task(self):
         self.timer.stop()
 
-    def check_update(self, t, key, compare):
-        o = getattr(self, key)
-        if isinstance(o.last_value, bool) or isinstance(o.last_value, str):
-            if o.last_value != t:
-                self.logging.debug(self.title + ' setting new %s level: %s', key, t)
-                o.notify_of_external_update(t)
-        else:
-            if o.last_value is None:
-                o.notify_of_external_update(t)
-            elif t is None:
-                o.notify_of_external_update(-1)
-                self.logging.error('no value for ' + key)
-            else:
-                try:
-                    if abs(o.last_value - t) > compare:
-                        self.logging.debug(self.title + ' setting new %s level: %s', key, t)
-                        o.notify_of_external_update(t)
-                except:
-                    if isinstance(t, str):
-                        self.logging.debug(self.title + ' setting new %s level: %s', key, t)
-                        o.notify_of_external_update(t)
-                    else:
-                        self.logging.error('invalid comparison')

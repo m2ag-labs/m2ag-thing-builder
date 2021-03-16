@@ -2,7 +2,6 @@
 
 import json
 import socket
-import sys
 
 import tornado.concurrent
 import tornado.gen
@@ -89,20 +88,27 @@ class MultipleThings:
 class BaseHandler(tornado.web.RequestHandler):
     """Base handler that is initialized with a thing."""
 
-    def initialize(self, things, hosts):
+    def initialize(self, things, hosts, options):
         """
         Initialize the handler.
 
         things -- list of Things managed by this server
         hosts -- list of allowed hostnames
+        options -- dict used to set disable_host_validation and security definitions
+        options.disable_host_validation -- whether or not to disable host validation --
+                                           note that this can lead to DNS rebinding
+                                           attacks
+        options.security_definitions -- true to set security to bearer or false for none.
         """
         self.things = things
         self.hosts = hosts
+        self.options = options
 
     def prepare(self):
         """Validate Host header."""
         host = self.request.headers.get('Host', None)
-        if host is not None and host in self.hosts:
+        if self.options['disable_host_validation'] or (
+                host is not None and host in self.hosts):
             return
 
         raise tornado.web.HTTPError(403)
@@ -150,25 +156,20 @@ class ThingsHandler(BaseHandler):
         for thing in self.things.get_things():
             description = thing.as_thing_description()
             description['href'] = thing.get_href()
-            description['links'].append({
+            alt = {
                 'rel': 'alternate',
-                'href': '{}{}'.format(ws_href, thing.get_href()),
-            })
-            description['base'] = '{}://{}'.format(
-                self.request.protocol,
-                self.request.headers.get('Host', '')
-            )
-            # TODO: add config option for this.
-            description['securityDefinitions'] = {
-                "bearer_sc": {
-                    "scheme": "bearer",
-                    "in": "header",
-                    "format": "jwt",
-                    "alg": "HS256",
-                    "authorization": f'https://{socket.gethostname()}.local:8443/auth.html'
-                },
+                'href': '{}{}'.format(ws_href, thing.get_href())
             }
-            description['security'] = ['bearer_sc']
+            if self.options['security_ws'] is not None:
+                alt['security'] = self.options['security_ws']
+            description['links'].append(alt)
+            description['base'] = '{}://{}{}'.format(
+                self.request.protocol,
+                self.request.headers.get('Host', ''),
+                thing.get_href()
+            )
+            description['securityDefinitions'] = self.options['security_definitions']
+            description['security'] = self.options['security']
             descriptions.append(description)
 
         self.write(json.dumps(descriptions))
@@ -178,20 +179,27 @@ class ThingsHandler(BaseHandler):
 class ThingHandler(tornado.websocket.WebSocketHandler, Subscriber):
     """Handle a request to /."""
 
-    def initialize(self, things, hosts):
+    def initialize(self, things, hosts, options):
         """
         Initialize the handler.
 
         things -- list of Things managed by this server
         hosts -- list of allowed hostnames
+        options -- dict used to set disable_host_validation and security definitions
+        options.disable_host_validation -- whether or not to disable host validation --
+                                           note that this can lead to DNS rebinding
+                                           attacks
+        options.security_definitions -- true to set security to bearer or false for no_sec.
         """
         self.things = things
         self.hosts = hosts
+        self.options = options
 
     def prepare(self):
         """Validate Host header."""
         host = self.request.headers.get('Host', None)
-        if host is not None and host in self.hosts:
+        if self.options['disable_host_validation'] or (
+                host is not None and host in self.hosts):
             return
 
         raise tornado.web.HTTPError(403)
@@ -242,25 +250,20 @@ class ThingHandler(tornado.websocket.WebSocketHandler, Subscriber):
         )
 
         description = self.thing.as_thing_description()
-        description['links'].append({
+        alt = {
             'rel': 'alternate',
-            'href': '{}{}'.format(ws_href, self.thing.get_href()),
-        })
-        description['base'] = '{}://{}'.format(
-            self.request.protocol,
-            self.request.headers.get('Host', '')
-        )
-        # TODO: add config option for this.
-        description['securityDefinitions'] = {
-            "bearer_sc": {
-                "scheme": "bearer",
-                "in": "header",
-                "format": "jwt",
-                "alg": "HS256",
-                "authorization": f'https://{socket.gethostname()}.local:8443/auth.html'
-            },
+            'href': '{}{}'.format(ws_href, self.thing.get_href())
         }
-        description['security'] = ['bearer_sc']
+        if self.options['security_ws'] is not None:
+            alt['security'] = self.options['security_ws']
+        description['links'].append(alt)
+        description['base'] = '{}://{}{}'.format(
+            self.request.protocol,
+            self.request.headers.get('Host', ''),
+            self.thing.get_href()
+        )
+        description['securityDefinitions'] = self.options['security_definitions']
+        description['security'] = self.options['security']
 
         self.write(json.dumps(description))
         self.finish()
@@ -719,7 +722,21 @@ class WebThingServer:
     """Server to represent a Web Thing over HTTP."""
 
     def __init__(self, things, port=80, hostname=None, ssl_options=None,
-                 additional_routes=None, base_path=''):
+                 additional_routes=None, base_path='', options=None):
+
+        self.options = options if options else {}
+
+        if 'disable_host_validation' not in self.options:
+            self.options['disable_host_validation'] = False
+
+        if 'security_definitions' not in self.options:
+            self.options['security_definitions'] = {
+                'nosec_sc': {
+                    'scheme': 'nosec',
+                }}
+            self.options['security'] = 'nosec_sc'
+            self.options['security_ws'] = None
+
         """
         Initialize the WebThingServer.
 
@@ -733,6 +750,13 @@ class WebThingServer:
         ssl_options -- dict of SSL options to pass to the tornado server
         additional_routes -- list of additional routes to add to the server
         base_path -- base URL path to use, rather than '/'
+        options -- dict used to set disable_host_validation and security definitions
+        options.disable_host_validation -- whether or not to disable host validation --
+                                   note that this can lead to DNS rebinding
+                                   attacks
+        options.auth_enabled -- true to set security to bearer or false for none
+        options.auth_server -- (optional) uri of auth server 
+        options.auth_description -- (optional) human readable description of auth. 
         """
         self.things = things
         self.name = things.get_name()
@@ -769,49 +793,85 @@ class WebThingServer:
                 [
                     r'/?',
                     ThingsHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/?',
                     ThingHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/properties/?',
                     PropertiesHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/properties/' +
                     r'(?P<property_name>[^/]+)/?',
                     PropertyHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/actions/?',
                     ActionsHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/actions/(?P<action_name>[^/]+)/?',
                     ActionHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/actions/' +
                     r'(?P<action_name>[^/]+)/(?P<action_id>[^/]+)/?',
                     ActionIDHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/events/?',
                     EventsHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/(?P<thing_id>\d+)/events/(?P<event_name>[^/]+)/?',
                     EventHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
             ]
         else:
@@ -820,42 +880,74 @@ class WebThingServer:
                 [
                     r'/?',
                     ThingHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/properties/?',
                     PropertiesHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/properties/(?P<property_name>[^/]+)/?',
                     PropertyHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/actions/?',
                     ActionsHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/actions/(?P<action_name>[^/]+)/?',
                     ActionHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/actions/(?P<action_name>[^/]+)/(?P<action_id>[^/]+)/?',
                     ActionIDHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/events/?',
                     EventsHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
                 [
                     r'/events/(?P<event_name>[^/]+)/?',
                     EventHandler,
-                    dict(things=self.things, hosts=self.hosts),
+                    dict(
+                        things=self.things,
+                        hosts=self.hosts,
+                        options=self.options,
+                    ),
                 ],
             ]
 
@@ -878,6 +970,7 @@ class WebThingServer:
             '{}._webthing._tcp.local.'.format(self.name),
         ]
         kwargs = {
+            'addresses': [socket.inet_aton(get_ip())],
             'port': self.port,
             'properties': {
                 'path': '/',
@@ -887,11 +980,6 @@ class WebThingServer:
 
         if self.app.is_tls:
             kwargs['properties']['tls'] = '1'
-
-        if sys.version_info.major == 3:
-            kwargs['addresses'] = [socket.inet_aton(get_ip())]
-        else:
-            kwargs['address'] = socket.inet_aton(get_ip())
 
         self.service_info = ServiceInfo(*args, **kwargs)
         self.zeroconf = Zeroconf()
