@@ -9,7 +9,7 @@ import jwt
 # secret can be any string
 # enable false will bypass auth checks'''
 try:
-    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json', 'r') as file:
+    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'r') as file:
         opts = json.loads(file.read().replace('\n', ''))
         for i in opts:
             if i == 'secret':
@@ -17,14 +17,40 @@ try:
 except FileNotFoundError:
     import string
     import random
+    import socket
 
     rando = string.ascii_lowercase + string.digits
     SECRET = ''.join(random.choice(rando) for i in range(100))
     default = {
-        "secret": SECRET,
-        "enable": True
+        'enable': True,
+        'secret_key': '',
+        'auth_header': 'Authorization',
+        'auth_param': 'jwt',
+        'auth_error_code': 401,
+        'auth_error_thing': {
+            "id": "urn:m2ag:security:authorization-required",
+            "title": f"{socket.gethostname()} is a secure thing. See https://{socket.gethostname()}.local:8443/auth.html",
+            "@context": "https://webthings.io/schemas",
+            "description": "Bearer tokens are required for this device",
+            "securityDefinitions": {
+                "bearer_sc": {
+                    "scheme": "bearer",
+                    "alg": "HS256",
+                    "description": "Security is required for this thing.",
+                    "authorization": f"https://{socket.gethostname()}.local:8443/auth.html"
+                }
+            },
+            "security": ["bearer_sc"]
+        },
+        'jwt_options': {
+            'verify_signature': True,
+            'verify_exp': False,  # JWTs will never expire for this device if False
+            'verify_nbf': False,
+            'verify_iat': True,
+            'verify_aud': False
+        }
     }
-    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_secret.json', 'w') as file:
+    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'w') as file:
         file.write(json.dumps(default))
 
 AUTH_TTL = 31104000  # this is super long for development
