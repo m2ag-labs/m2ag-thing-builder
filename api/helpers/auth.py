@@ -3,25 +3,11 @@ from pathlib import Path
 
 import json
 import jwt
+import socket
 
-# secret key in config
-# if file read fails, create a file with a random string in it. (thing uses same file)
-# secret can be any string
-# enable false will bypass auth checks'''
-try:
-    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'r') as file:
-        opts = json.loads(file.read().replace('\n', ''))
-        for i in opts:
-            if i == 'secret':
-                SECRET = opts[i]
-except FileNotFoundError:
-    import string
-    import random
-    import socket
-
-    rando = string.ascii_lowercase + string.digits
-    SECRET = ''.join(random.choice(rando) for i in range(100))
-    default = {
+CONFIG_FILE = 'jwt_config.json'
+CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets'
+OPTIONS = {
         'enable': True,
         'secret_key': '',
         'auth_header': 'Authorization',
@@ -50,8 +36,28 @@ except FileNotFoundError:
             'verify_aud': False
         }
     }
+
+# secret key in config
+# if file read fails, create a file with a random string in it. (thing uses same file)
+# secret can be any string
+# enable false will bypass auth checks'''
+# TODO: do I need all the config options here?
+try:
+    with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'r') as file:
+        opts = json.loads(file.read().replace('\n', ''))
+        for i in opts:
+            OPTIONS[i] = opts[i]
+        del opts  # clean up
+except FileNotFoundError:
+    import string
+    import random
+    import socket
+
+    rando = string.ascii_lowercase + string.digits
+    OPTIONS['secret_key'] = ''.join(random.choice(rando) for i in range(100))
+
     with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'w') as file:
-        file.write(json.dumps(default))
+        file.write(json.dumps(OPTIONS))
 
 AUTH_TTL = 31104000  # this is super long for development
 
@@ -71,7 +77,7 @@ class Auth:
         encoded = jwt.encode({
             'some': 'payload',
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=AUTH_TTL)},
-            SECRET,
+            OPTIONS['secret_key'],
             algorithm='HS256'
         )
         # raspian desktop full -- this returns a buffer and needs to be decoded - currently pyjwt 1.7.0
