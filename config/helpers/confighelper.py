@@ -13,8 +13,8 @@ class ConfigHelper:
             features.append('m2ag-gateway')
         if os.path.isfile("/etc/systemd/system/m2ag-homeassistant.service"):
             features.append('m2ag-homeassistant')
-        if os.path.isfile("/etc/init.d/motion"):
-            features.append('m2ag-motion')
+        # if os.path.isfile("/etc/init.d/motion"):
+        #    features.append('m2ag-motion')
         return features
 
     @staticmethod
@@ -87,7 +87,7 @@ class ConfigHelper:
             with open('./device/things/components/' + component + '.py', 'r') as file:
                 config = file.read().replace('\n', "")
         else:
-            with open('./device/hardware/components/' + component + '.py', 'r') as file:
+            with open('./device/services/components/' + component + '.py', 'r') as file:
                 config = file.read().replace('\n', "")
         return config
 
@@ -97,7 +97,7 @@ class ConfigHelper:
             with open('./device/things/components/' + component + '.py', 'w') as file:
                 file.write(data)
         else:
-            with open('./device/hardware/components/' + component + '.py', 'w') as file:
+            with open('./device/services/components/' + component + '.py', 'w') as file:
                 file.write(data)
         file.close()
         return ConfigHelper.get_component_thing(component, thing)
@@ -113,11 +113,11 @@ class ConfigHelper:
             return ConfigHelper.delete_module('things', component)
         else:
             try:
-                os.remove('./device/hardware/components/' + component + '.py')
+                os.remove('./device/services/components/' + component + '.py')
             except FileNotFoundError:
                 pass
             return ConfigHelper.delete_module('components', component)
-            # return os.path.exists('./device/hardware/components/' + component + '.py')
+            # return os.path.exists('./device/services/components/' + component + '.py')
 
     @staticmethod
     def get_component_map():
