@@ -52,11 +52,11 @@ def start_server(prefix='', port=None):
             'keyfile': f'{str(Path.home())}/.m2ag-labs/ssl/server.key',
         }
         if port is None:
-            port = 8443
+            port = 443
     else:
         ssl_options = None
         if port is None:
-            port = 8080
+            port = 80
     http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_options)
     http_server.listen(port)
     tornado.ioloop.IOLoop.instance().start()
