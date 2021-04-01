@@ -95,6 +95,9 @@ def jwtauth(handler_class):
             # configure the jwt with a config file
             if not OPTIONS['enable']:
                 return True
+            # TODO: do we need to allow this?
+            # if handler.request.remote_ip == '127.0.0.1':
+            #    return True
             auth = handler.request.headers.get(OPTIONS['auth_header'])
             if auth:
                 parts = auth.split()

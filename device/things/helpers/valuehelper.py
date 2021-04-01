@@ -62,7 +62,7 @@ class ValueHelper(Value):
         """
         if value is not None and value != self.last_value:
             if self.threshold is not None:
-                if abs(value - self.last_value >= self.threshold):
+                if abs(value - self.last_value) >= self.threshold:
                     self.last_value = value
                     self.emit('update', value)
             else:

@@ -11,7 +11,7 @@ class I2cWrapper:
             self.offsets = config['offsets']
         lib = {}
         try:
-            # to do -- what to do about multiple modules --
+            # TODO -- what to do about multiple modules --
             lib[self.wrapped] = importlib.import_module(self.wrapped)
         except ModuleNotFoundError:
             self.logging.error(f'{self.wrapped} driver not installed')

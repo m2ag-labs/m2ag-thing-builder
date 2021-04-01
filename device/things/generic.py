@@ -1,4 +1,4 @@
-import tornado.ioloop
+from tornado import ioloop
 from webthing import Thing
 
 
@@ -15,10 +15,11 @@ class Generic(Thing):
         )
         self.component = component
         self.logging = logging
+        self.main_loop = ioloop.IOLoop.current()
         if 'poll' in conf:
             self.poll = conf['poll']
             logging.debug(self.title + ' starting the sensor update looping task')
-            self.timer = tornado.ioloop.PeriodicCallback(
+            self.timer = ioloop.PeriodicCallback(
                 self.poll_component,
                 self.poll['poll_interval']
             )
@@ -38,6 +39,6 @@ class Generic(Thing):
             o = getattr(self, key)
             o.notify_of_external_update(t)
 
-    def cancel_update_level_task(self):
+    def cancel_update_task(self):
         self.timer.stop()
 

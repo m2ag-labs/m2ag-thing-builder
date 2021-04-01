@@ -2,7 +2,7 @@
 config/component_map.json
 config/server.json
 config/available
-device/hardware/components
+device/services/components
 device/things/components
 static
 venv/

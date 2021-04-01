@@ -4,17 +4,19 @@ try:
     import board
     import busio
     from busio import I2C
-    i2c_enabled = True
 except(ImportError, RuntimeError, ModuleNotFoundError):
-    i2c_enabled = False
+    pass
 
 
 class Services:
 
     def __init__(self, config, logging):
 
-        if i2c_enabled:
+        try:
             self.i2c: I2C = busio.I2C(board.SCL, board.SDA)
+            self.i2c_enabled = True
+        except(ValueError, NameError):
+            self.i2c_enabled = False
 
         self.components = {}
         # Create a dict with desired modules in it
@@ -34,7 +36,7 @@ class Services:
                 class_ = getattr(module, 'I2cWrapper')
 
             if 'svc' in conf[k]['init'] and conf[k]['init']['svc'] == 'i2c':
-                if i2c_enabled:
+                if self.i2c_enabled:
                     cl = class_(conf[k], logging, self.i2c)
                 else:
                     logging.error(f'{k} requires i2c to be enabled - skipping')
