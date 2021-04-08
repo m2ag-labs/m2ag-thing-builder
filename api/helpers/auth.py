@@ -59,7 +59,7 @@ except FileNotFoundError:
     with open(f'{str(Path.home())}/.m2ag-labs/secrets/jwt_config.json', 'w') as file:
         file.write(json.dumps(OPTIONS))
 
-AUTH_TTL = 31104000  # this is super long for development
+AUTH_TTL = 315360000  # 10 years
 
 
 class Auth:
@@ -75,7 +75,7 @@ class Auth:
             Encode a new token with JSON Web Token (PyJWT)
         """
         encoded = jwt.encode({
-            'some': 'payload',
+            'context': 'reserved',
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=AUTH_TTL)},
             OPTIONS['secret_key'],
             algorithm='HS256'
