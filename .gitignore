@@ -5,6 +5,7 @@ config/available
 device/services/components
 device/things/components
 static
+client/
 venv/
 .DS_Store
 .idea

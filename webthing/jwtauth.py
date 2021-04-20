@@ -21,6 +21,7 @@ CONFIG_FILE = 'jwt_config.json'
 CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets'
 OPTIONS = {
     'enable': True,
+    'local_bypass': True,
     'secret_key': '',
     'auth_header': 'Authorization',
     'auth_param': 'jwt',
@@ -96,8 +97,9 @@ def jwtauth(handler_class):
             if not OPTIONS['enable']:
                 return True
             # TODO: do we need to allow this?
-            # if handler.request.remote_ip == '127.0.0.1':
-            #    return True
+            # makes same host access harder
+            if OPTIONS['local_bypass'] and handler.request.remote_ip == '127.0.0.1':
+                return True
             auth = handler.request.headers.get(OPTIONS['auth_header'])
             if auth:
                 parts = auth.split()

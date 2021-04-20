@@ -3,7 +3,6 @@ import importlib
 try:
     import board
     import busio
-    from busio import I2C
 except(ImportError, RuntimeError, ModuleNotFoundError):
     pass
 
@@ -13,7 +12,7 @@ class Services:
     def __init__(self, config, logging):
 
         try:
-            self.i2c: I2C = busio.I2C(board.SCL, board.SDA)
+            self.i2c = busio.I2C(board.SCL, board.SDA)
             self.i2c_enabled = True
         except(ValueError, NameError):
             self.i2c_enabled = False
