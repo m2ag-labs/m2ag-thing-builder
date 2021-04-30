@@ -8,9 +8,9 @@ from pathlib import Path
 from webthing import (MultipleThings, WebThingServer)
 from device.services.services import Services
 from device.things.things import Things
-from config.helpers.confighelper import ConfigHelper
+from api.helpers.config import Config
 
-config = ConfigHelper.get_server_config()
+config = Config.get_server_config()
 
 
 def run_server():

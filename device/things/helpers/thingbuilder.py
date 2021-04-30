@@ -11,10 +11,10 @@ class ThingBuilder:
             simplify the types of value object to create.
         """
 
-        for p in config['props']:
+        for p in config['thing']['props']:
             _set = 'None'
             _opts = {}
-            pr = config['props'][p]
+            pr = config['thing']['props'][p]
 
             _get = pr['value'][0]
             _set = pr['value'][1]

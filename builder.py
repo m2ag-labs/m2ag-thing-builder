@@ -3,13 +3,13 @@ import os
 from pathlib import Path
 
 from flask import Flask, request, Response
-from flask_htpasswd import HtPasswdAuth
 from flask_cors import CORS
+from flask_htpasswd import HtPasswdAuth
 
 from api.helpers.auth import Auth
 from api.helpers.password import Password
 from api.helpers.utils import Utils
-from config.helpers.confighelper import ConfigHelper
+from api.helpers.config import Config
 
 # app = Flask(__name__)
 app = Flask(__name__)
@@ -27,70 +27,69 @@ def get_token(user):
         return format_return(Auth.get_token())
 
 
-# manage config files
+# manage config files -- 4.27
 # get the whole thing -- limit to get for now since config is assembled
 @app.route('/config', methods=['GET'])
 @htpasswd.required
 def get_config(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_config())
+        return format_return(Config.get_config())
 
 
 @app.route('/config/features', methods=['GET'])
 @htpasswd.required
 def get_config_features(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_features())
+        return format_return(Config.get_features())
 
 
 @app.route('/config/server', methods=['GET', 'PUT'])
 @htpasswd.required
 def get_put_server(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_server())
+        return format_return(Config.get_server())
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_server(request.get_json()))
+        return format_return(Config.put_server(request.get_json()))
 
     else:
         return 'access to that service not allowed', 204
 
 
 # section = thing or component, component is the file to delete
-@app.route('/config/<section>/<component>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/config/things/<thing>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
-def section_component(user, section, component):
-    if section in ['components', 'things']:
-        if request.method == 'GET':
-            return format_return(ConfigHelper.get_module(section, component))
-        elif request.method == 'PUT':
-            return format_return(ConfigHelper.put_module(section, component, request.get_json()))
-        elif request.method == 'DELETE':
-            return format_return(ConfigHelper.delete_module(section, component))
-    else:
-        return 'access not allowed', 204
-
-
-@app.route('/config/component_map', methods=['GET', 'PUT'])
-@htpasswd.required
-def get_component_map(user):
+def section_component(user, thing):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_map())
+        return format_return(Config.get_module(thing))
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_map(request.get_json()))
+        pass
+        return format_return(Config.put_module(section, component, request.get_json()))
+    elif request.method == 'DELETE':
+        pass
+        return format_return(Config.delete_module(section, component))
 
+
+# 4.27
+@app.route('/config/enabled', methods=['GET', 'PUT'])
+@htpasswd.required
+def get_enabled(user):
+    if request.method == 'GET':
+        return format_return(Config.get_enabled())
+    elif request.method == 'PUT':
+        return format_return(Config.put_enabled(request.get_json()))
     else:
-        return 'access to that service not allowed', 204
+        return 'access to that route not allowed', 204
 
 
 @app.route('/things/<module>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
 def get_put_thing(user, module):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_thing(module, True))
+        return format_return(Config.get_component_thing(module, True))
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_thing(module, request.get_json(), True))
+        return format_return(Config.put_component_thing(module, request.get_json(), True))
     elif request.method == 'DELETE':
-        return format_return(ConfigHelper.delete_component_thing(module, True))
+        return format_return(Config.delete_component_thing(module, True))
     else:
         return 'access to that service not allowed', 204
 
@@ -99,11 +98,11 @@ def get_put_thing(user, module):
 @htpasswd.required
 def get_put_component(user, module):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_thing(module, False))
+        return format_return(Config.get_component_thing(module, False))
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_thing(module, request.get_json(), False))
+        return format_return(Config.put_component_thing(module, request.get_json(), False))
     elif request.method == 'DELETE':
-        return format_return(ConfigHelper.delete_component_thing(module, False))
+        return format_return(Config.delete_component_thing(module, False))
     else:
         return 'access to that service not allowed', 204
 
