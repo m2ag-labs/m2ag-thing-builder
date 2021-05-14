@@ -13,57 +13,58 @@ class Config:
             features.append('m2ag-indicator')
         return features
 
-    @staticmethod
-    def get_server_config():
-        # TODO: add error check here
-        # get server record -
-        # do feature detection. Is motion/mozilla gateway etc installed?
-        config = Config.get_server()
-        config['available'] = Config.get_modules()
-        config['services'] = Config.get_features()
-        with open('./config/enabled.json', 'r') as file:
-            try:
-                enabled = file.read().replace('\n', "")
-                enabled = json.loads(enabled)
-                config['enabled'] = enabled['enabled']
-            except UnicodeDecodeError:
-                config['enabled'] = {}
-
-        # add features covered in separate call.
-        # config['features'] = ConfigHelper.get_features()
-        return config
+    # @staticmethod
+    # def get_server_config():
+    #     # TODO: add error check here
+    #     # get server record -
+    #     # do feature detection. Is motion/mozilla gateway etc installed?
+    #     config = Config.get_server()
+    #     config['available'] = Config.get_modules()
+    #     config['services'] = Config.get_features()
+    #     with open('./config/enabled.json', 'r') as file:
+    #         try:
+    #             enabled = file.read().replace('\n', "")
+    #             enabled = json.loads(enabled)
+    #             config['enabled'] = enabled['enabled']
+    #         except UnicodeDecodeError:
+    #             config['enabled'] = {}
+    #
+    #     # add features covered in separate call.
+    #     # config['features'] = ConfigHelper.get_features()
+    #     return config
 
     @staticmethod
     def get_config():
         # get_enabled returns components and things lists
         config = Config.get_enabled()
+
         config['server'] = Config.get_server()
         config['services'] = Config.get_features()
         return config
 
-    @staticmethod
-    def get_modules():
-        # all is stored in device/available - dir for each
-        modules = {}
-        entries = os.scandir('./device/available/')
-        for entry in entries:
-            if entry.name == 'helper':
-                continue
-            with open(entry.path, 'r') as file:
-                try:
-                    config = file.read().replace('\n', "")
-                    if config != '':
-                        modules[entry.name[:entry.name.find('.json')]] = json.loads(config)
-                except UnicodeDecodeError:  # .DStore on mac make this choke otherwise
-                    pass
-        return modules
+
+    # @staticmethod
+    # def get_modules():
+    #     # all is stored in device/available - dir for each
+    #     modules = {}
+    #     entries = os.scandir('./device/available/')
+    #     for entry in entries:
+    #         if entry.name == 'helper':
+    #             continue
+    #         with open(entry.path, 'r') as file:
+    #             try:
+    #                 config = file.read().replace('\n', "")
+    #                 if config != '':
+    #                     modules[entry.name[:entry.name.find('.json')]] = json.loads(config)
+    #             except UnicodeDecodeError:  # .DStore on mac make this choke otherwise
+    #                 pass
+    #     return modules
 
     @staticmethod  # -- 5-27-21
     def get_thing(thing):
         with open('./device/available/' + thing + '.json', 'r') as file:
             config = file.read().replace('\n', "")
         config = json.loads(config)
-        config['helper'] = Config.get_helper(thing)
         return config
 
     @staticmethod
