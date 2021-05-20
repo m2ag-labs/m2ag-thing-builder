@@ -11,6 +11,8 @@ class Config:
             features.append('m2ag-thing')
         if os.path.isfile("/etc/systemd/system/m2ag-indicator.service"):
             features.append('m2ag-indicator')
+        if os.path.isfile("/lib/systemd/system/nodered.service"):
+            features.append('nodered')
         return features
 
     '''
@@ -95,9 +97,9 @@ class Config:
         return config
 
     @staticmethod  # 5-27-21
-    def put_helper(helper, data):
-        with open('./device/helpers/' + helper + '.json', 'w') as file:
-            file.write(data)
+    def put_helper(helper, request):
+        with open('./device/helpers/' + helper + '.py', 'w') as file:
+            file.write(request['data'])
         file.close()
         return Config.get_helper(helper)
 
