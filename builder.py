@@ -110,7 +110,7 @@ def handle_pip(user, package):
 @app.route('/<service>/<action>', methods=['GET'])
 @htpasswd.required
 def handle_service(user, service, action):
-    if service in ['m2ag-thing', 'm2ag-indicator']:
+    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered']:
         # the service web component prefixes everything with m2ag-
         if service == 'm2ag-motion':
             return format_return(Utils.service_action('motion', action))
