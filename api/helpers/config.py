@@ -72,7 +72,10 @@ class Config:
 
     @staticmethod
     def delete_thing(thing):
-        os.remove('./device/available/' + thing + '.json')
+        try:
+            os.remove('./device/available/' + thing + '.json')
+        except FileNotFoundError:
+            pass
         return os.path.exists('./device/available/' + thing + '.json')
 
     @staticmethod
@@ -106,7 +109,7 @@ class Config:
     @staticmethod  # 5-27-21
     def delete_helper(helper):
         try:
-            os.remove('./device/helpers/' + helper + '.json')
+            os.remove('./device/helpers/' + helper + '.py')
         except FileNotFoundError:
             pass
         # return os.path.exists('./device/things/' + thing + '.json')

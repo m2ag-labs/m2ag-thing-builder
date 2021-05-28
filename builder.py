@@ -5,16 +5,14 @@ from pathlib import Path
 from flask import Flask, request, Response
 from flask_cors import CORS
 from flask_htpasswd import HtPasswdAuth
-
 from api.helpers.auth import Auth
 from api.helpers.password import Password
 from api.helpers.utils import Utils
 from api.helpers.config import Config
 
-# app = Flask(__name__)
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'
-app.config['FLASK_SECRET'] = '8675309'
+# app.config['FLASK_SECRET'] = '8675309'
 CORS(app)
 htpasswd = HtPasswdAuth(app)
 
@@ -32,7 +30,9 @@ def get_token(user):
 @htpasswd.required
 def get_config(user):
     if request.method == 'GET':
-        return format_return(Config.get_config())
+        config = Config.get_config()
+        config['users'] = Password.get_users()
+        return format_return(config)
 
 
 @app.route('/config/features', methods=['GET'])
@@ -91,7 +91,7 @@ def handle_helpers(user, helper):
         return 'access to that service not allowed', 204
 
 
-@app.route('/config/pip/<package>', methods=['GET', 'PUT'])
+@app.route('/config/pip/<package>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
 def handle_pip(user, package):
     if request.method == 'GET':
@@ -99,9 +99,11 @@ def handle_pip(user, package):
             return format_return(Utils.get_pip(package))
         else:
             return format_return(Utils.get_pip_list())
-
     elif request.method == 'PUT':
         return format_return(Utils.put_pip(package))
+    elif request.method == 'DELETE':
+        return format_return(Utils.delete_pip(package))
+
 
     else:
         return 'access to that service not allowed', 204
@@ -110,19 +112,18 @@ def handle_pip(user, package):
 @app.route('/<service>/<action>', methods=['GET'])
 @htpasswd.required
 def handle_service(user, service, action):
-    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered']:
+    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered', 'motion']:
         # the service web component prefixes everything with m2ag-
-        if service == 'm2ag-motion':
-            return format_return(Utils.service_action('motion', action))
-        else:
-            return format_return(Utils.service_action(service, action))
+        return format_return(Utils.service_action(service, action))
     else:
         return 'access to that service not allowed', 200
 
 
-@app.route('/password', methods=['PUT', 'GET', 'POST', 'DELETE'])
+@app.route('/config/user/<id>', methods=['PUT', 'GET', 'POST', 'DELETE'])
 @htpasswd.required
-def handle_password(user):
+def handle_password(user, id):
+    # TODO: add more user info - and permissions
+    # id is not used
     if request.method == 'PUT':
         return format_return(Password.change_password(request.get_json()))
     if request.method == 'GET':
@@ -136,7 +137,8 @@ def handle_password(user):
 def format_return(data):
     return Response(json.dumps({'data': data}), mimetype='application/json')
 
-# TODO: wsgi <-- tornado
+
+# TODO: move to tornado app
 if __name__ == '__main__':
     if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') and os.path.isfile(
             f'{str(Path.home())}/.m2ag-labs/ssl/server.key'):

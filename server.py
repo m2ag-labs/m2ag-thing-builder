@@ -15,6 +15,7 @@ from __future__ import print_function
 
 import os
 import sys
+from abc import ABC
 from argparse import ArgumentParser
 from pathlib import Path
 
