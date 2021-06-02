@@ -32,7 +32,7 @@ def run_server():
     time.sleep(5)  # allow webthing to start before advertising
 
     logging.info('starting the server')
-    # TODO: add extra advertising here
+    # TODO: add extra advertising or turn off here
     server.start()
     # noinspection PyBroadException
     """try:
