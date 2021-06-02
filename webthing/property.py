@@ -53,20 +53,12 @@ class Property:
         """
         description = deepcopy(self.metadata)
 
-        if 'forms' not in description:
-            description['forms'] = []
+        if 'links' not in description:
+            description['links'] = []
 
-        # TODO: The assumption is that all properties are at least readable - but that's probably not true
-        op = ['readproperty']
-        if not self.metadata.get('readOnly'):
-            op.append('writeproperty')
-
-        if self.metadata.get('observable'):
-            op.extend(('observeproperty', 'unobserveproperty'))
-
-        description['forms'].append(
+        description['links'].append(
             {
-                'op': op,
+                'rel': 'property',
                 'href': self.href_prefix + self.href,
             }
         )

@@ -1,14 +1,15 @@
 """Python Web Thing server implementation."""
 
-from zeroconf import ServiceInfo, Zeroconf
 import json
 import socket
+
 import tornado.concurrent
 import tornado.gen
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
+from zeroconf import ServiceInfo, Zeroconf
 
 from .errors import PropertyError
 from .jwtauth import jwtauth
@@ -155,13 +156,13 @@ class ThingsHandler(BaseHandler):
         for thing in self.things.get_things():
             description = thing.as_thing_description()
             description['href'] = thing.get_href()
-            alt = ({
+            alt = {
                 'rel': 'alternate',
-                'href': '{}{}'.format(ws_href, thing.get_href()),
-            })
+                'href': '{}{}'.format(ws_href, thing.get_href())
+            }
             if self.options['security_ws'] is not None:
                 alt['security'] = self.options['security_ws']
-            description['forms'].append(alt)
+            description['links'].append(alt)
             description['base'] = '{}://{}{}'.format(
                 self.request.protocol,
                 self.request.headers.get('Host', ''),
@@ -255,7 +256,7 @@ class ThingHandler(tornado.websocket.WebSocketHandler, Subscriber):
         }
         if self.options['security_ws'] is not None:
             alt['security'] = self.options['security_ws']
-        description['forms'].append(alt)
+        description['links'].append(alt)
         description['base'] = '{}://{}{}'.format(
             self.request.protocol,
             self.request.headers.get('Host', ''),
@@ -444,7 +445,9 @@ class PropertyHandler(BaseHandler):
 
         if thing.has_property(property_name):
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(thing.get_property(property_name)))
+            self.write(json.dumps({
+                property_name: thing.get_property(property_name),
+            }))
         else:
             self.set_status(404)
 
@@ -461,27 +464,33 @@ class PropertyHandler(BaseHandler):
             return
 
         try:
-            value = json.loads(self.request.body.decode())
+            args = json.loads(self.request.body.decode())
         except ValueError:
+            self.set_status(400)
+            return
+
+        if property_name not in args:
             self.set_status(400)
             return
 
         if thing.has_property(property_name):
             try:
-                thing.set_property(property_name, value)
+                thing.set_property(property_name, args[property_name])
             except PropertyError:
                 self.set_status(400)
                 return
 
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(thing.get_property(property_name)))
+            self.write(json.dumps({
+                property_name: thing.get_property(property_name),
+            }))
         else:
             self.set_status(404)
 
 
 @jwtauth
 class ActionsHandler(BaseHandler):
-    """Handle a request to /actions."""  # TODO: Should this feature be removed?
+    """Handle a request to /actions."""
 
     def get(self, thing_id='0'):
         """
@@ -578,9 +587,19 @@ class ActionHandler(BaseHandler):
             self.set_status(400)
             return
 
-        # Allow payloads wrapped inside `value` field
-        if 'value' in input_:
-            input_ = input_['value']
+        keys = list(message.keys())
+        if len(keys) != 1:
+            self.set_status(400)
+            return
+
+        if keys[0] != action_name:
+            self.set_status(400)
+            return
+
+        action_params = message[action_name]
+        input_ = None
+        if 'input' in action_params:
+            input_ = action_params['input']
 
         action = thing.perform_action(action_name, input_)
         if action:
@@ -600,7 +619,7 @@ class ActionHandler(BaseHandler):
 
 @jwtauth
 class ActionIDHandler(BaseHandler):
-    """Handle a request to /actions/<action_name>/<action_id>."""  # TODO: Should this feature be removed?
+    """Handle a request to /actions/<action_name>/<action_id>."""
 
     def get(self, thing_id='0', action_name=None, action_id=None):
         """

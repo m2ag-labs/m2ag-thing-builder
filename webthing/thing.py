@@ -46,7 +46,7 @@ class Thing:
             'properties': self.get_property_descriptions(),
             'actions': {},
             'events': {},
-            'forms': [
+            'links': [
                 {
                     'rel': 'properties',
                     'href': '{}/properties'.format(self.href_prefix),
@@ -64,26 +64,26 @@ class Thing:
 
         for name, action in self.available_actions.items():
             thing['actions'][name] = action['metadata']
-            thing['actions'][name]['forms'] = [
+            thing['actions'][name]['links'] = [
                 {
-                    'op': ['invokeaction'],
+                    'rel': 'action',
                     'href': '{}/actions/{}'.format(self.href_prefix, name),
                 },
             ]
 
         for name, event in self.available_events.items():
             thing['events'][name] = event['metadata']
-            thing['events'][name]['forms'] = [
+            thing['events'][name]['links'] = [
                 {
-                    'op': ['subscribeevent', 'unsubscribeevent'],
+                    'rel': 'event',
                     'href': '{}/events/{}'.format(self.href_prefix, name),
                 },
             ]
 
         if self.ui_href is not None:
-            thing['forms'].append({
+            thing['links'].append({
                 'rel': 'alternate',
-                'type': 'text/html',
+                'mediaType': 'text/html',
                 'href': self.ui_href,
             })
 
