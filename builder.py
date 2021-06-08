@@ -10,9 +10,10 @@ from api.helpers.password import Password
 from api.helpers.utils import Utils
 from api.helpers.config import Config
 
+
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'
-# app.config['FLASK_SECRET'] = '8675309'
+app.config['FLASK_SECRET'] = '8675309'
 CORS(app)
 htpasswd = HtPasswdAuth(app)
 

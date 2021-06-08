@@ -16,6 +16,13 @@ class Generic(Thing):
         self.component = component
         self.logging = logging
         self.main_loop = ioloop.IOLoop.current()
+        # are there any buttons in the component:
+        if hasattr(self.component, 'attr'):
+            for i in component.attr:
+                getattr(self.component, i).when_pressed = lambda: self.main_loop.add_callback(lambda: self.set_property(i, True))
+                if component.attr[i]['release']:
+                    getattr(self.component, i).when_released = lambda: self.main_loop.add_callback(lambda: self.set_property(i, False))
+
         if 'poll' in conf:
             self.poll = conf['poll']
             logging.debug(self.title + ' starting the sensor update looping task')
@@ -26,11 +33,13 @@ class Generic(Thing):
             self.timer.start()
 
     def poll_component(self):
+        # TODO: do i need this? This was for polling services -- not the builders job.
         if hasattr(self.component, 'update'):
             self.component.update()
         #  TODO: test with servo controller
         for key in self.poll['members']:
-            if isinstance(key, dict):  # allows multiple things to one component - i.e. nest
+            # TODO: do I need this? -- on thing per component for now.
+            if isinstance(key, dict):  # allows multiple things to one component
                 c = list(key.keys())[0]
                 t = self.component.get({c: key})
             else:  # one thing,
