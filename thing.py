@@ -8,9 +8,9 @@ from pathlib import Path
 from webthing import (MultipleThings, WebThingServer)
 from device.services.services import Services
 from device.things.things import Things
-from config.helpers.confighelper import ConfigHelper
+from api.helpers.config import Config
 
-config = ConfigHelper.get_server_config()
+config = Config.get_server_config()
 
 
 def run_server():
@@ -32,7 +32,7 @@ def run_server():
     time.sleep(5)  # allow webthing to start before advertising
 
     logging.info('starting the server')
-    # TODO: add extra advertising here
+    # TODO: add extra advertising or turn off here
     server.start()
     # noinspection PyBroadException
     """try:

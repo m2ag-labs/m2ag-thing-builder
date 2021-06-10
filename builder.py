@@ -3,15 +3,14 @@ import os
 from pathlib import Path
 
 from flask import Flask, request, Response
-from flask_htpasswd import HtPasswdAuth
 from flask_cors import CORS
-
+from flask_htpasswd import HtPasswdAuth
 from api.helpers.auth import Auth
 from api.helpers.password import Password
 from api.helpers.utils import Utils
-from config.helpers.confighelper import ConfigHelper
+from api.helpers.config import Config
 
-# app = Flask(__name__)
+
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'
 app.config['FLASK_SECRET'] = '8675309'
@@ -19,7 +18,7 @@ CORS(app)
 htpasswd = HtPasswdAuth(app)
 
 
-# jwt to access this thing with
+# jwt to access this thing with 4-27-21
 @app.route('/auth', methods=['GET'])
 @htpasswd.required
 def get_token(user):
@@ -27,98 +26,85 @@ def get_token(user):
         return format_return(Auth.get_token())
 
 
-# manage config files
 # get the whole thing -- limit to get for now since config is assembled
 @app.route('/config', methods=['GET'])
 @htpasswd.required
 def get_config(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_config())
+        config = Config.get_config()
+        config['users'] = Password.get_users()
+        return format_return(config)
 
 
 @app.route('/config/features', methods=['GET'])
 @htpasswd.required
-def get_config_features(user):
+def get_features(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_features())
+        return format_return(Config.get_features())
 
 
 @app.route('/config/server', methods=['GET', 'PUT'])
 @htpasswd.required
-def get_put_server(user):
+def handle_server(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_server())
+        return format_return(Config.get_server())
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_server(request.get_json()))
+        return format_return(Config.put_server(request.get_json()))
 
     else:
-        return 'access to that service not allowed', 204
+        return 'access to that route not allowed', 204
 
 
-# section = thing or component, component is the file to delete
-@app.route('/config/<section>/<component>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/config/enabled', methods=['GET', 'PUT'])
 @htpasswd.required
-def section_component(user, section, component):
-    if section in ['components', 'things']:
-        if request.method == 'GET':
-            return format_return(ConfigHelper.get_module(section, component))
-        elif request.method == 'PUT':
-            return format_return(ConfigHelper.put_module(section, component, request.get_json()))
-        elif request.method == 'DELETE':
-            return format_return(ConfigHelper.delete_module(section, component))
-    else:
-        return 'access not allowed', 204
-
-
-@app.route('/config/component_map', methods=['GET', 'PUT'])
-@htpasswd.required
-def get_component_map(user):
+def handle_enabled(user):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_map())
+        return format_return(Config.get_enabled())
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_map(request.get_json()))
-
+        return format_return(Config.put_enabled(request.get_json()))
     else:
-        return 'access to that service not allowed', 204
+        return 'access to that route not allowed', 204
 
 
-@app.route('/things/<module>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/config/things/<thing>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
-def get_put_thing(user, module):
+def handle_thing(user, thing):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_thing(module, True))
+        return format_return(Config.get_thing(thing))
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_thing(module, request.get_json(), True))
+        return format_return(Config.put_thing(thing, request.get_json()))
     elif request.method == 'DELETE':
-        return format_return(ConfigHelper.delete_component_thing(module, True))
+        return format_return(Config.delete_thing(thing))
     else:
         return 'access to that service not allowed', 204
 
 
-@app.route('/components/<module>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/config/helpers/<helper>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
-def get_put_component(user, module):
+def handle_helpers(user, helper):
     if request.method == 'GET':
-        return format_return(ConfigHelper.get_component_thing(module, False))
+        return format_return(Config.get_helper(helper))
     elif request.method == 'PUT':
-        return format_return(ConfigHelper.put_component_thing(module, request.get_json(), False))
+        return format_return(Config.put_helper(helper, request.get_json()))
     elif request.method == 'DELETE':
-        return format_return(ConfigHelper.delete_component_thing(module, False))
+        return format_return(Config.delete_helper(helper))
     else:
         return 'access to that service not allowed', 204
 
 
-@app.route('/pip/<package>', methods=['GET', 'PUT'])
+@app.route('/config/pip/<package>', methods=['GET', 'PUT', 'DELETE'])
 @htpasswd.required
-def get_put_pip(user, package):
+def handle_pip(user, package):
     if request.method == 'GET':
         if package != '--list--':
             return format_return(Utils.get_pip(package))
         else:
             return format_return(Utils.get_pip_list())
-
     elif request.method == 'PUT':
         return format_return(Utils.put_pip(package))
+    elif request.method == 'DELETE':
+        return format_return(Utils.delete_pip(package))
+
 
     else:
         return 'access to that service not allowed', 204
@@ -126,20 +112,19 @@ def get_put_pip(user, package):
 
 @app.route('/<service>/<action>', methods=['GET'])
 @htpasswd.required
-def service_action(user, service, action):
-    if service in ['m2ag-thing', 'm2ag-motion', 'm2ag-homeassistant', 'm2ag-indicator', 'm2ag-gateway']:
+def handle_service(user, service, action):
+    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered', 'motion']:
         # the service web component prefixes everything with m2ag-
-        if service == 'm2ag-motion':
-            return format_return(Utils.service_action('motion', action))
-        else:
-            return format_return(Utils.service_action(service, action))
+        return format_return(Utils.service_action(service, action))
     else:
         return 'access to that service not allowed', 200
 
 
-@app.route('/password', methods=['PUT', 'GET', 'POST', 'DELETE'])
+@app.route('/config/user/<id>', methods=['PUT', 'GET', 'POST', 'DELETE'])
 @htpasswd.required
-def password(user):
+def handle_password(user, id):
+    # TODO: add more user info - and permissions
+    # id is not used
     if request.method == 'PUT':
         return format_return(Password.change_password(request.get_json()))
     if request.method == 'GET':
@@ -154,11 +139,11 @@ def format_return(data):
     return Response(json.dumps({'data': data}), mimetype='application/json')
 
 
+# TODO: move to tornado app
 if __name__ == '__main__':
     if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') and os.path.isfile(
             f'{str(Path.home())}/.m2ag-labs/ssl/server.key'):
         context = (f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key')
         app.run(host='0.0.0.0', port='5000', ssl_context=context)
-    #  app.run(host=f'{socket.gethostname()}.local', port='5000', ssl_context=context)
     else:
         app.run(host='0.0.0.0', port='5000')

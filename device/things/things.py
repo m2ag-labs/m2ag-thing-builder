@@ -10,29 +10,19 @@ class Things:
         self.things = []
         """
             The inclusion of things is dependent on the component map
-            To have a thing created it must have a key in the map.
-            The key value will be the hardware component specified. The key may be False 
-            for things with no component. 
+            Each thing must have a corresponding component - generic or custom
         """
-        c_map = conf['component_map']
-        th = conf['things']
+        th = conf['available']  # available
         # TODO: Add checking for component_map and things -- graceful fail
-        for k in c_map:
+        for k in conf['enabled']:
             # generate a class
-            # TODO: make this all generic
-            try:
-                module = importlib.import_module('device.things.components.' + k)
-                class_ = getattr(module, k.title())
-                # if module is not found use generic poll class
-            except ModuleNotFoundError:
-                module = importlib.import_module('device.things.generic')
-                class_ = getattr(module, 'Generic')
-
+            module = importlib.import_module('device.things.generic')
+            class_ = getattr(module, 'Generic')
             # add the required device to the thing
-            if c_map[k] in device:
-                cl_ = class_(th[k], logging, device[c_map[k]])
+            if k in device:
+                cl_ = class_(th[k]['thing'], logging, device[k])
                 ThingBuilder.add_props(th[k], cl_)
                 # Add properties
                 self.things.append(cl_)
             else:
-                logging.error(f'Thing build error: {c_map[k]} was not found in devices.')
+                logging.error(f'Thing build error: {k} was not found in devices.')

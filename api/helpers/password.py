@@ -12,7 +12,7 @@ class Password:
                 userdb.change_password(data['user'], data['password'])
             except htpasswd.basic.UserNotExists:
                 return False
-        return True
+        return Password.get_users()
 
     @staticmethod
     def add_user(data):
@@ -21,7 +21,7 @@ class Password:
                 userdb.add(data['user'], data['password'])
             except htpasswd.basic.UserExists:
                 return False
-        return True
+        return Password.get_users()
 
     @staticmethod
     def delete_user(data):
@@ -30,7 +30,7 @@ class Password:
                 userdb.pop(data['user'])
             except htpasswd.basic.UserNotExists:
                 return False
-        return True
+        return Password.get_users()
 
     @staticmethod
     def get_users():
@@ -38,4 +38,4 @@ class Password:
             try:
                 return userdb.users
             except Exception:
-                return False
+                return []
