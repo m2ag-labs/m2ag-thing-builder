@@ -33,18 +33,8 @@ class Generic(Thing):
             self.timer.start()
 
     def poll_component(self):
-        # TODO: do i need this? This was for polling services -- not the builders job.
-        if hasattr(self.component, 'update'):
-            self.component.update()
-        #  TODO: test with servo controller
         for key in self.poll['members']:
-            # TODO: do I need this? -- on thing per component for now.
-            if isinstance(key, dict):  # allows multiple things to one component
-                c = list(key.keys())[0]
-                t = self.component.get({c: key})
-            else:  # one thing,
-                t = self.component.get(key)
-
+            t = self.component.get(key)
             o = getattr(self, key)
             o.notify_of_external_update(t)
 
