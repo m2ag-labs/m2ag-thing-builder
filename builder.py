@@ -10,7 +10,6 @@ from api.helpers.password import Password
 from api.helpers.utils import Utils
 from api.helpers.config import Config
 
-
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'
 app.config['FLASK_SECRET'] = '8675309'
@@ -118,6 +117,12 @@ def handle_service(user, service, action):
         return format_return(Utils.service_action(service, action))
     else:
         return 'access to that service not allowed', 200
+
+
+@app.route('/status/<service>', methods=['GET'])
+@htpasswd.required
+def handle_status(user, service):
+    return format_return(Utils.service_status(service))
 
 
 @app.route('/config/user/<id>', methods=['PUT', 'GET', 'POST', 'DELETE'])

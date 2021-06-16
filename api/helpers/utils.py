@@ -25,6 +25,16 @@ class Utils:
             line += str(p.stdout.readline().decode('utf-8'))
         return line
 
+    '''For the web worker -- active or not'''
+
+    @staticmethod
+    def service_status(service):
+        stat = os.system(f'systemctl is-active --quiet {service}')
+        if stat == 0:
+            return {service: True}
+        else:
+            return {service: False}
+
     @staticmethod
     def pinout():
         p = subprocess.Popen(['/usr/bin/pinout', '-m'], stdout=subprocess.PIPE, )
@@ -64,4 +74,3 @@ class Utils:
         for i in range(0, 50):
             line += str(p.stdout.readline().decode('utf-8'))
         return line
-
