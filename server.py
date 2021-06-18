@@ -81,6 +81,8 @@ def parse_args(args=None):
 def main(args=None):
     args = parse_args(args)
     os.chdir(args.dir)
+    print('m2ag.labs client service beta 1.0')
+    print('copyright 2021 https://m2aglabs.com')
     print('Starting server on port {}'.format(args.port))
     start_server(prefix=args.prefix, port=args.port)
 

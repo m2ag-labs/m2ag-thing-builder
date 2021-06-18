@@ -47,6 +47,8 @@ def run_server():
 
 
 if __name__ == '__main__':
+    print('m2ag.labs thing service beta 1.0')
+    print('copyright 2021 https://m2aglabs.com')
     logging.basicConfig(
         level=config['log_level'],
         format="%(asctime)s %(filename)s:%(lineno)s %(levelname)s %(message)s"

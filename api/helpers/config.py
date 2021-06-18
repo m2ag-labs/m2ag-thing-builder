@@ -11,8 +11,10 @@ class Config:
             features.append('m2ag-thing')
         if os.path.isfile("/etc/systemd/system/m2ag-indicator.service"):
             features.append('m2ag-indicator')
-        if os.path.isfile("/lib/systemd/system/nodered.service"):
+        if os.path.isfile('/lib/systemd/system/nodered.service'):
             features.append('nodered')
+        if os.path.isfile('/lib/systemd/system/pigpiod.service'):
+            features.append('pigpiod')
         return features
 
     '''

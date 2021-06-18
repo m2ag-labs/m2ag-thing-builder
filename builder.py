@@ -112,7 +112,7 @@ def handle_pip(user, package):
 @app.route('/<service>/<action>', methods=['GET'])
 @htpasswd.required
 def handle_service(user, service, action):
-    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered', 'motion']:
+    if service in ['m2ag-thing', 'm2ag-indicator', 'nodered', 'motion', 'pigpiod']:
         # the service web component prefixes everything with m2ag-
         return format_return(Utils.service_action(service, action))
     else:
@@ -146,6 +146,8 @@ def format_return(data):
 
 # TODO: move to tornado app
 if __name__ == '__main__':
+    print('m2ag.labs builder service beta 1.0')
+    print('copyright 2021 https://m2aglabs.com')
     if os.path.isfile(f'{str(Path.home())}/.m2ag-labs/ssl/server.crt') and os.path.isfile(
             f'{str(Path.home())}/.m2ag-labs/ssl/server.key'):
         context = (f'{str(Path.home())}/.m2ag-labs/ssl/server.crt', f'{str(Path.home())}/.m2ag-labs/ssl/server.key')
