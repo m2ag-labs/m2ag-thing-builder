@@ -5,10 +5,10 @@ from pathlib import Path
 from flask import Flask, request, Response
 from flask_cors import CORS
 from flask_htpasswd import HtPasswdAuth
-from api.helpers.auth import Auth
-from api.helpers.password import Password
-from api.helpers.utils import Utils
-from api.helpers.config import Config
+from api.auth import Auth
+from api.password import Password
+from api.utils import Utils
+from api.config import Config
 
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = f'{str(Path.home())}/.m2ag-labs/.htpasswd'

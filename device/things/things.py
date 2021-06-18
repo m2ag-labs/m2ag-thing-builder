@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 
 import importlib
-from device.things.helpers.thingbuilder import ThingBuilder
+from device.things.thingbuilder import ThingBuilder
 
 
 class Things:

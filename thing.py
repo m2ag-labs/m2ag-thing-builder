@@ -8,7 +8,7 @@ from pathlib import Path
 from webthing import (MultipleThings, WebThingServer)
 from device.services.services import Services
 from device.things.things import Things
-from api.helpers.config import Config
+from api.config import Config
 
 config = Config.get_server_config()
 
