@@ -9,6 +9,7 @@ CONFIG_FILE = 'jwt_config.json'
 CONFIG_PATH = f'{str(Path.home())}/.m2ag-labs/secrets'
 OPTIONS = {
         'enable': True,
+        'local_bypass': True,
         'secret_key': '',
         'auth_header': 'Authorization',
         'auth_param': 'jwt',
