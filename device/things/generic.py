@@ -34,9 +34,13 @@ class Generic(Thing):
 
     def poll_component(self):
         for key in self.poll['members']:
-            t = self.component.get(key)
-            o = getattr(self, key)
-            o.notify_of_external_update(t)
+            # noinspection PyBroadException
+            try:
+                t = self.component.get(key)
+                o = getattr(self, key)
+                o.notify_of_external_update(t)
+            except:
+                self.logging.error(key, ' not found in poll')
 
     def cancel_update_task(self):
         self.timer.stop()
